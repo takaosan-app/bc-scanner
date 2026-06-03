@@ -5,21 +5,26 @@ const AUTH_COOKIE = 'bc_auth'
 export function middleware(request: NextRequest) {
   const ACCESS_PASSWORD = process.env.ACCESS_PASSWORD || ''
 
-  if (!ACCESS_PASSWORD) return NextResponse.next()
+  if (!ACCESS_PASSWORD) {
+    const res = NextResponse.next()
+    res.headers.set('x-middleware-ran', 'no-password')
+    return res
+  }
 
   const { pathname } = request.nextUrl
 
-  // ログイン関連は通す（/bc/login と /login の両方に対応）
   if (pathname.endsWith('/login') || pathname.includes('/api/login')) {
-    return NextResponse.next()
+    const res = NextResponse.next()
+    res.headers.set('x-middleware-ran', 'login-bypass')
+    return res
   }
 
-  // 認証Cookie確認
   if (request.cookies.get(AUTH_COOKIE)?.value === ACCESS_PASSWORD) {
-    return NextResponse.next()
+    const res = NextResponse.next()
+    res.headers.set('x-middleware-ran', 'cookie-ok')
+    return res
   }
 
-  // ログインページへリダイレクト
   return NextResponse.redirect(new URL('/bc/login', request.url))
 }
 
