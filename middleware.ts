@@ -1,18 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const ALLOWED_IPS = (process.env.ALLOWED_IPS || '').split(',').map(s => s.trim()).filter(Boolean)
+const ACCESS_PASSWORD = process.env.ACCESS_PASSWORD || ''
+const AUTH_COOKIE = 'bc_auth'
 
 export function middleware(request: NextRequest) {
-  if (ALLOWED_IPS.length === 0) return NextResponse.next()
+  const path = request.nextUrl.pathname
 
-  const forwarded = request.headers.get('x-forwarded-for')
-  const ip = forwarded ? forwarded.split(',')[0].trim() : (request.headers.get('x-real-ip') ?? '127.0.0.1')
+  // パスワード未設定なら制限なし
+  if (!ACCESS_PASSWORD) return NextResponse.next()
 
-  if (!ALLOWED_IPS.includes(ip)) {
-    return new NextResponse('Forbidden', { status: 403 })
+  // ログイン関連は通す
+  if (path.startsWith('/bc/login') || path.startsWith('/bc/api/login')) {
+    return NextResponse.next()
   }
 
-  return NextResponse.next()
+  // 認証Cookie確認
+  if (request.cookies.get(AUTH_COOKIE)?.value === ACCESS_PASSWORD) {
+    return NextResponse.next()
+  }
+
+  // ログインページへリダイレクト
+  return NextResponse.redirect(new URL('/bc/login', request.url))
 }
 
 export const config = {
