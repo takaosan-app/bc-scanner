@@ -1,0 +1,12 @@
+services:
+  bc_app:
+    build: .
+    container_name: bc_app
+    env_file: .env
+    restart: unless-stopped
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    external: true
