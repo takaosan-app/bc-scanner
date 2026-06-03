@@ -4,13 +4,13 @@ const ACCESS_PASSWORD = process.env.ACCESS_PASSWORD || ''
 const AUTH_COOKIE = 'bc_auth'
 
 export function middleware(request: NextRequest) {
-  const path = request.nextUrl.pathname
-
-  // パスワード未設定なら制限なし
   if (!ACCESS_PASSWORD) return NextResponse.next()
 
-  // ログイン関連は通す
-  if (path.startsWith('/bc/login') || path.startsWith('/bc/api/login')) {
+  const { pathname, basePath } = request.nextUrl
+
+  // ログイン関連は通す（basePath あり・なし両対応）
+  const stripped = basePath ? pathname.replace(basePath, '') || '/' : pathname
+  if (stripped === '/login' || stripped.startsWith('/api/login')) {
     return NextResponse.next()
   }
 
@@ -20,7 +20,9 @@ export function middleware(request: NextRequest) {
   }
 
   // ログインページへリダイレクト
-  return NextResponse.redirect(new URL('/bc/login', request.url))
+  const url = request.nextUrl.clone()
+  url.pathname = basePath + '/login'
+  return NextResponse.redirect(url)
 }
 
 export const config = {
