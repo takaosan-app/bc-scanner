@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const ACCESS_PASSWORD = process.env.ACCESS_PASSWORD || ''
 const AUTH_COOKIE = 'bc_auth'
 
 export function middleware(request: NextRequest) {
+  const ACCESS_PASSWORD = process.env.ACCESS_PASSWORD || ''
+
   if (!ACCESS_PASSWORD) return NextResponse.next()
 
-  const { pathname, basePath } = request.nextUrl
+  const { pathname } = request.nextUrl
 
-  // ログイン関連は通す（basePath あり・なし両対応）
-  const stripped = basePath ? pathname.replace(basePath, '') || '/' : pathname
-  if (stripped === '/login' || stripped.startsWith('/api/login')) {
+  // ログイン関連は通す（/bc/login と /login の両方に対応）
+  if (pathname.endsWith('/login') || pathname.includes('/api/login')) {
     return NextResponse.next()
   }
 
@@ -20,9 +20,7 @@ export function middleware(request: NextRequest) {
   }
 
   // ログインページへリダイレクト
-  const url = request.nextUrl.clone()
-  url.pathname = basePath + '/login'
-  return NextResponse.redirect(url)
+  return NextResponse.redirect(new URL('/bc/login', request.url))
 }
 
 export const config = {
